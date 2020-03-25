@@ -1,0 +1,8 @@
+version: "3"
+
+services:
+  hugo:
+    build: .
+    working_dir: /app
+    volumes:
+      - $PWD:/app
