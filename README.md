@@ -1,1 +1,1 @@
-# blog.dtan4.net
+# blog-ja.dtan4.net

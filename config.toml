@@ -1,6 +1,6 @@
-baseURL = "http://example.org/"
+baseURL = "http://blog-ja.dtan4.net/"
 languageCode = "en-us"
-title = "My New Hugo Site"
+title = "blog-ja.dtan4.net"
 theme = "anubis"
 
 [author]
