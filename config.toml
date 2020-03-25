@@ -1,3 +1,15 @@
 baseURL = "http://example.org/"
 languageCode = "en-us"
 title = "My New Hugo Site"
+theme = "anubis"
+
+[author]
+  name = "dtan4"
+
+[menu]
+  [[menu.main]]
+    identifier = "archive"
+    name = "Archive"
+    title = "Archive"
+    url = "/posts"
+    weight = 0
