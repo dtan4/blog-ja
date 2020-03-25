@@ -3,5 +3,5 @@ build:
 	docker-compose run --rm hugo -D
 
 .PHONY: server
-hugo-server:
+server:
 	docker-compose up hugo-server
