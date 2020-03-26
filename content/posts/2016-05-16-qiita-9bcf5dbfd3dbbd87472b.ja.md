@@ -2,7 +2,7 @@
 date = "2016-05-16"
 title = "wercker の新機能 Wercker Workflows を試す"
 slug = "qiita-9bcf5dbfd3dbbd87472b" 
-tags = ["Rails","wercker"]
+tags = ["qiita","Rails","wercker"]
 categories = []
 +++
 
