@@ -9,9 +9,9 @@ for file in $(find content/posts -type f -name '*-hatenablog.md'); do
     filename="$(basename "${url}")"
 
     set +e
-    wget -O "static/images/${file}" "${url}" || rm -f "static/images/${file}" > /dev/null
+    wget -O "static/images/${filename}" "${url}" || rm -f "static/images/${filename}" > /dev/null
     set -e
 
     perl -i -pe "s|\\Q${image}\\E|![](/images/${filename})|" "${file}"
-  done < <(grep -E "!\[.*\]\(https://.+)" "${file}" | grep -v badge | grep -v quay)
+  done < <(grep -E "!\[.*\]\(https?://.+)" "${file}" | grep -v badge | grep -v quay)
 done
