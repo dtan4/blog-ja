@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>qiita on blog-ja.dtan4.net</title><link>http://blog-ja.dtan4.net/tags/qiita/</link><description>Recent content in qiita on blog-ja.dtan4.net</description><generator>Hugo -- gohugo.io</generator><language>ja-JP</language><copyright>Copyright &amp;copy; 2020 dtan4 All Rights Reserved</copyright><lastBuildDate>Mon, 18 Dec 2017 00:00:00 +0000</lastBuildDate><atom:link href="http://blog-ja.dtan4.net/tags/qiita/index.xml" rel="self" type="application/rss+xml"/><item><title>全ての Pod を一発でリロードさせる方法</title><link>http://blog-ja.dtan4.net/posts/qiita-9e0ab5dbe8c64ed6dd21/</link><pubDate>Mon, 18 Dec 2017 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-9e0ab5dbe8c64ed6dd21/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+前提条件:
+Deployment を使ってアプリケーションのデプロイ管理を行っている tl;dr PodTemplateSpec の Label か Annotation (.spec.template.metadata.[labels|annotations]) に適当な key-value を追加・上書きする。 value はタイムスタンプにでもしておくと便利。
+apiVersion: extensions/v1beta1 kind: Deployment metadata: name: awesome-app labels: name: awesome-app role: web spec: minReadySeconds: 30 strategy: type: RollingUpdate rollingUpdate: maxSurge: 50% maxUnavailable: 0 replicas: 20 template: metadata: name: awesome-app labels: name: awesome-app role: web annotations: reloaded-at: &amp;#34;20171217190756&amp;#34; # &amp;lt;========== これ シェルコマンド一発でやるなら以下。エイリアス作っておくと便利。
+# &amp;#34;frontend&amp;#34; Deployment 配下の Pod を全部リロードする $ kubectl patch deployment frontend -p \ &amp;#34;{\&amp;#34;spec\&amp;#34;:{\&amp;#34;template\&amp;#34;:{\&amp;#34;metadata\&amp;#34;:{\&amp;#34;annotations\&amp;#34;:{\&amp;#34;reloaded-at\&amp;#34;:\&amp;#34;`date +&amp;#39;%Y%m%d%H%M%S&amp;#39;`\&amp;#34;}}}}}&amp;#34; Why Kubernetes で Pod に設定を注入するには ConfigMap や Secret が主に使われます。 これらの中身は Pod 起動時に Pod へコピーされる仕組みとなっているため、アプリケーション起動中に中身を変更してもそれが即反映されるわけではありません。 Pod を作りなおす必要があります。</description></item><item><title>手元の全 Ruby バージョンから特定の gem を一掃する</title><link>http://blog-ja.dtan4.net/posts/qiita-215f688a86d22c30362e/</link><pubDate>Tue, 28 Mar 2017 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-215f688a86d22c30362e/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+(2017/03/29 10:50 追記)
+rbenv でインストールしたバージョン全てに対してコマンドを実行する rbenv-each というプラグインがあったので、以下のコマンドでやりたいことが実現できました。
+$ rbenv each gem uninstall -x gemname rbenv-each は @sakuro さんにコメントでご教示いただきました。ありがとうございました。
+$ export GEM_NAME=gemname $ for v in `rbenv whence $GEM_NAME`; do rbenv shell $v; gem uninstall -x $GEM_NAME; rbenv shell --unset; done 昔 Ruby で作ったコマンドラインツールを Go で書き換えた、けど rbenv のパスが PATH の先頭寄りに書かれていて優先されてしまう（下の例）…というときに便利です。nodenv や plenv でも、適切なコマンドに入れ替えれば応用できそう。
+$ gemname rbenv: gemname: command not found The `gemname' command exists in these Ruby versions: 2.3.0 2.</description></item><item><title>GitHub Releases にアップロードしてある最新バージョンの成果物を取得するワンライナー</title><link>http://blog-ja.dtan4.net/posts/qiita-1a9f16ff881ac456c18f/</link><pubDate>Tue, 31 Jan 2017 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-1a9f16ff881ac456c18f/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+e.g. dtan4/s3url 最新バージョンの Linux 64bit バイナリが入った tarball を取得する
+$ curl -s https://api.github.com/repos/dtan4/s3url/releases | jq -r &amp;#39;.[0].assets[] | select(.name | test(&amp;#34;linux-amd64.tar.gz&amp;#34;)) | .browser_download_url&amp;#39; https://github.com/dtan4/s3url/releases/download/v0.3.1/s3url-v0.3.1-linux-amd64.tar.gz サーバに Go バイナリを配置していて定期的に更新したい場合は、このワンライナーと展開処理を行うスクリプトを cron とかで回しておけばよさそうです。
+curl -s https://api.github.com/repos/dtan4/s3url/releases dtan4/s3url リポジトリの Releases を取得する GitHub API です。 Public リポジトリなら認証無しで叩けますが、その場合の呼出回数は1時間あたり最大60回となってるので、Access Token を付与するほうが安心です。
+Releases | GitHub Developer Guide
+jq -r -r オプションをつけると、ダブルクオートで囲まずそのまま文字列を返します。
+.[0].assets[] 上記 API のレスポンスは Release 作成時刻 created_at 降順になっているので、先頭の要素が最新の Release となります。assets に成果物 (asset) のメタデータが配列で格納されてます。
+select(.name | test(&amp;quot;linux-amd64.tar.gz&amp;quot;)) name フィールドが linux-amd64.</description></item><item><title>Go でツール書くときの Makefile 晒す</title><link>http://blog-ja.dtan4.net/posts/qiita-8c417b629b6b2033a541/</link><pubDate>Thu, 08 Dec 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-8c417b629b6b2033a541/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Go でツール書くときはタスクランナーとして make を使っています。ビルドだけじゃなくて、テストや配布用パッケージ作成も一括して make でやっています。 今回は整理も兼ねて、自分が普段どういう Makefile を使っているのか解剖していきます。
+なぜ make を使うのか ビルドフラグ覚えるのが面倒だから、make は (Windows を除く) 大半のプラットフォームに入っていて使いやすいからというのが理由です。script/build みたいにシェルスクリプトを複数用意するのでもまあ良いと思いますが…。大半の Go プロジェクトは Makefile 置いてありますね。
+make を使った開発フロー 基本的には、リポジトリを git clone / go get -d した後に以下のコマンドを打てばアプリケーションをインストールできるようにしています。
+$ cd $GOPATH/src/github.com/yourname/yourapp $ make deps $ make $ make install $ yourapp 以前 make deps は余分で make &amp;amp;&amp;amp; make install で完結してほしいと言われたことがあったのですが、glide install するオーバーヘッドが（変更なくとも）多少あったので deps は入れました。Kubernetes 系とかデカいの依存してるとね… LL だと bundle install だの npm install だのを独立に行うので、まあいいのではないでしょうか。
+変数定義 NAME := s3url VERSION := v0.</description></item><item><title>EC2 + IAM Role で供給されたクレデンシャルを環境変数として使う</title><link>http://blog-ja.dtan4.net/posts/qiita-4f687a74abcbe1a36190/</link><pubDate>Mon, 03 Oct 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-4f687a74abcbe1a36190/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+2016-12-09 14:15 追記 EC2 上の Docker コンテナ内からでも、AWS_ 環境変数を設定することなくインスタンスプロファイルが使えました。
+AWS SDK は AWS_* 環境変数設定されてなかったら自動で http://169.254.169.254/latest/meta-data/... を叩いてクレデンシャルを取りに行きます。で、ホスト直実行でもコンテナ挟むのでもつなぎに行くネットワークは同じ AWS なので問題なくインスタンスプロファイルを取れるのでした。
+したがって、この記事に書いてあるような手間をかける必要はありません…
+tl;dr AWS_SECURITY_TOKEN AWS_SESSION_TOKEN を忘れるな
+2019-03-11 追記 awscli は AWS_SECURITY_TOKEN で実行できますが、 AWS SDK は AWS_SESSION_TOKEN でないと動作しないものがあるようです。 ログイン画面から発行されるワンタイムパスワードも現在は AWS_SESSION_TOKEN であるため、そちらに統一する方が良さそうです。
+時代は IAM Role EC2 上で AWS リソースにアクセスする場合、専用の IAM ユーザを作ってクレデンシャルを発行してもいいのですが、IAM Role を EC2 に紐付けると便利です。クレデンシャルをアプリケーションコードやスクリプトに埋め込む必要がなくなるからです。
+しかし awscli や AWS SDK を埋め込んだコードを__ホスト上で直に__実行する場合は彼らがよしなにクレデンシャルを取得するのでいいのですが、Docker コンテナ上で実行する場合は少々面倒です。-e AWS_ACCESS_KEY_ID= でクレデンシャルを渡したいのですが値はどこから取ればいいのか。
+※ 今回は ECS 上ではなく1、直接インスタンス上で docker run する場合の話です。
+metadata からクレデンシャルを取り出す EC2 インスタンス内部から http://169.</description></item><item><title>Travis CI から複数ファイルを GitHub Releases にアップロードする</title><link>http://blog-ja.dtan4.net/posts/qiita-f2736c25c4eb63b2d206/</link><pubDate>Thu, 22 Sep 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-f2736c25c4eb63b2d206/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Travis CI から GitHub Releases にアップロードする Go などのコンパイラ言語で書いたソフトウェアを配布する場所として、最近は GitHub Releases を使うことが多いと思います。単純に Git tag と紐付けてファイルをアップロードする場所ですが、手作業でやるのも面倒なので CI と連携させるのが便利です。
+Travis CI には Deployment の機能があります。その名の通り、アプリケーションのテスト/ビルド後に、外部の指定した場所へ成果物をデプロイする機能です。デプロイするトリガーとして「特定のブランチ」「git tag がプッシュされた場合のみ」「Go 1.7 ビルドのみ」のような条件が指定できます。
+Deployment は、標準で GitHub Releases のインテグレーションを備えています (GitHub Releases Uploading - Travis CI)。GitHub Access Token だけ与えればあとはよしなにアップロードしてくれる便利君ですが、複数ファイルアップロードしたいときに難がありました。
+file にアップロード対象のファイルを列挙する 公式ドキュメントで紹介されている方法です。以下は ec2c のバイナリパッケージを12個アップロードする例です。
+https://docs.travis-ci.com/user/deployment/releases/#Uploading-Multiple-Files
+deploy: provider: releases skip_cleanup: true api_key: $GITHUB_TOKEN file: - dist/ec2c-0.1.0-darwin-386.tar.gz - dist/ec2c-0.1.0-darwin-386.zip - dist/ec2c-0.1.0-darwin-amd64.tar.gz - dist/ec2c-0.1.0-darwin-amd64.zip - dist/ec2c-0.1.0-linux-386.tar.gz - dist/ec2c-0.1.0-linux-386.zip - dist/ec2c-0.1.0-linux-amd64.tar.gz - dist/ec2c-0.1.0-linux-amd64.zip - dist/ec2c-0.</description></item><item><title>PostgreSQL が起動したかどうか簡単に確認する (ping)</title><link>http://blog-ja.dtan4.net/posts/qiita-45ae1a8ac6f853a0dc1a/</link><pubDate>Wed, 07 Sep 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-45ae1a8ac6f853a0dc1a/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+PostgreSQL は、プロセスを起動してから SQL クエリ・外部入力を受け付けるようになるまで若干のタイムラグが有ります。特に Docker コンテナで起動した場合、自分の環境では5秒程度待つことになります。
+The files belonging to this database system will be owned by user &amp;quot;postgres&amp;quot;. This user must also own the server process. The database cluster will be initialized with locale &amp;quot;en_US.utf8&amp;quot;. The default database encoding has accordingly been set to &amp;quot;UTF8&amp;quot;. The default text search configuration will be set to &amp;quot;english&amp;quot;. ... LOG: autovacuum launcher shutting down LOG: shutting down LOG: database system is shut down done server stopped PostgreSQL init process complete; ready for start up.</description></item><item><title>CoreOS で ECS クラスタを構築する</title><link>http://blog-ja.dtan4.net/posts/qiita-a98ceb194ed4854bb300/</link><pubDate>Wed, 15 Jun 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-a98ceb194ed4854bb300/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+ECS クラスタを作るにあたって土台の EC2 インスタンスが必要となるわけですが、そこで使う AMI として公式では ECS-optimized AMI を推奨しています。ECS-optimized AMI は Amazon Linux AMI に新し目の Docker と ecs-agent、ecs-init スクリプトを同梱したやつです。初回チュートリアルでクラスタを立てる時もこの AMI が使われます。
+ただ、実際のところ EC2 の中身に関しては (2016-06-15 時点)
+Linux Kernel 3.10 以上で Docker 1.5.0 以上で ecs-agent コンテナが立ってる のであれば何でもよいのです。ECS-optimized AMI はそれを満たした推奨構成であるだけです。
+というわけで、Docker 環境に特化した CoreOS を使ってみましょう。
+ECS クラスタを準備 まっさらからクラスタ建てる場合は、Management Console なり ecs-cli なりで新しくクラスタを作ってください。 もしくは、既存クラスタにノード追加の形で CoreOS インスタンスを追加することもできます。
+（ないなら）IAM Role ecsInstanceRole を作成 ecs-agent が ECS API にアクセスするため、その権限をインスタンスに付与してあげる必要があります。 初回チュートリアルでクラスタを立ち上げた場合は作られてると思いますが、まっさらからクラスタを構築する場合はこの Role がないので作る必要があります。
+IAM -&amp;gt; Roles -&amp;gt; Create New Role を開く [AWS Service Role] の [Amazon EC2] を開き、AmazonEC2ContainerServiceforEC2Role にチェックを入れる [Create Role] 作った Role を開き、[Trusted Relationships] -&amp;gt; [Show policy document] が以下のようになっているのを確認。なってなかったら上書き。 { &amp;#34;Version&amp;#34;: &amp;#34;2008-10-17&amp;#34;, &amp;#34;Statement&amp;#34;: [ { &amp;#34;Sid&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;Effect&amp;#34;: &amp;#34;Allow&amp;#34;, &amp;#34;Principal&amp;#34;: { &amp;#34;Service&amp;#34;: &amp;#34;ec2.</description></item><item><title>RubyGems 開発速習会</title><link>http://blog-ja.dtan4.net/posts/qiita-ea25b1c74346e330d5eb/</link><pubDate>Fri, 27 May 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-ea25b1c74346e330d5eb/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+この記事は、RubyGem 開発速習会@Wantedly の資料として作られたものです :exclamation:
+この資料は、
+Ruby 2.3.1 RubyGems 2.5.1 Bundler 1.12.4 の環境で執筆されました。
+この速習会のゴール gem を一から作れるようになる ただ作るだけじゃなく、テスト駆動開発を取り入れた効率のよい開発ができるようにある 開発支援系のサービスに詳しくなる gem とは gem は、最もメジャーな Ruby ライブラリの形式です。 Ruby on Rails も1つの gem として提供されており、rails gem の中でもまた多くの gem が利用されています。 現在公開されている Ruby のソフトウェアや Ruby on Rails 上の Web サービスは、多くの gem を組み合わせることで成り立っているのです。
+ちなみに www.wantedly.com では、Gemfile に書いてあるだけで__164個__の gem が使われています。
+$ cat Gemfile | grep -E &amp;#39;^\s*gem&amp;#39; | wc -l 164 gem をインストールしたり探したりするときは、gem コマンドを利用します。</description></item><item><title>Kubernetes の Go API クライアントライブラリを使って Kubernetes を直接操作する</title><link>http://blog-ja.dtan4.net/posts/qiita-f2f30207e0acec454c3d/</link><pubDate>Fri, 20 May 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-f2f30207e0acec454c3d/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+2016/11/15 10:15 追記
+この記事では kubernetes/kubernetes リポジトリに含まれているクライアントライブラリを紹介していますが、今年の8月だか9月になって API クライアントだけが別リポジトリとして切り出されました。
+https://github.com/kubernetes/client-go
+今後何かツールを作るときは、この client-go を使うのがよいでしょう。
+というわけで、以下の内容は__記事初公開時点の、client-go がなかった時代の__ものとなっております。その点ご留意いただいた上でお読みください。
+追記終わり
+あまり知られてないようですが、Kubernetes には公式の Go 製 API クライアントライブラリがあります。kubectl もこのライブラリを用いて実装されています。
+https://github.com/kubernetes/kubernetes/tree/master/pkg/client/
+kubectl は確かに万能なんですが、実運用に投入するとなるとその万能さがマイナスに効いてくることもあります。で、自分たちが使いやすいように kubectl をラップした何かを作りたくなるのですが、他の言語から kubectl をサブコマンド呼び出しするのは筋が悪いです。API ライブラリを使ってネイティブレベルで Kubernetes を操作するようにしましょう。
+いきなりサンプルコード というわけで、Pod の名前一覧を表示するだけのサンプルコードです。
+package main import ( &amp;#34;fmt&amp;#34; &amp;#34;os&amp;#34; &amp;#34;k8s.io/kubernetes/pkg/api&amp;#34; client &amp;#34;k8s.io/kubernetes/pkg/client/unversioned&amp;#34; &amp;#34;k8s.io/kubernetes/pkg/client/unversioned/clientcmd&amp;#34; ) func newKubeClient() (*client.Client, error) { loadingRules := clientcmd.NewDefaultClientConfigLoadingRules() loadingRules.ExplicitPath = clientcmd.RecommendedHomeFile loader := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &amp;amp;clientcmd.ConfigOverrides{}) clientConfig, err := loader.ClientConfig() if err != nil { return nil, err } kubeClient, err := client.</description></item><item><title>CoreOS で Docker デーモンの起動オプション DOCKER_OPTS を設定する</title><link>http://blog-ja.dtan4.net/posts/qiita-2212607d13ad7c81120e/</link><pubDate>Mon, 16 May 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-2212607d13ad7c81120e/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+CoreOS は何もしなくとも自動で Docker デーモンが立ち上がりますが、たまに Docker デーモン自体の起動オプション (DOCKER_OPTS) を設定したい時があります。Docker デーモンへのアクセスには TLS 認証使いたいとか、overlay network を使うための下準備をしたいとかです。
+そういう時は、cloud-config の units に docker.service を記述することで Docker デーモンの起動時に DOCKER_OPTS を設定できます。 以下の例では、etcd を利用した overlay network 構築 のオプションを指定しています。
+coreos: units: - name: etcd2.service command: start - name: docker.service # &amp;lt;===== drop-ins: - name: 10-cluster-config.conf content: | [Service] Environment=&amp;#34;DOCKER_OPTS=--cluster-store=etcd://0.0.0.0:2379 --cluster-advertise=eth0:2375&amp;#34; REF Customizing docker</description></item><item><title>wercker の新機能 Wercker Workflows を試す</title><link>http://blog-ja.dtan4.net/posts/qiita-9bcf5dbfd3dbbd87472b/</link><pubDate>Mon, 16 May 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-9bcf5dbfd3dbbd87472b/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+プライベートリポジトリの CI 無料でお馴染みの wercker が、先日ワークフロー機能 Wercker Workflows をリリースしました。
+とりあえず、以下の公式デモ動画を観れば何ができるのかわかると思います。
+ブログ記事 :point_right: Introducing Wercker Workflows デモ動画 :point_right: Wercker Workflows - YouTube
+Wercker Workflows とは いわゆるワークフロー機能というやつで、1つの CI プロセスを複数のパイプラインに分割して組み合わせる機能です。Jenkins とか、最近だと Concourse CI でお馴染みの機能です。
+パイプラインは従来の build, deploy に相当するもので、1つの CI プロセス内におけるタスクの分割単位となります。従来は build, deploy の2つしか記述できなかったところ、test や push-dev のように複数種類のパイプラインを記述できるようになったのが今回の Workflows です。
+以下の例では、Build, Tests, Push to registry, Notify Scheduler の4つのパイプラインを直列に実行しています。これだけだと従来の wercker とあまり変わりません。
+_image from: http://wercker.com/workflows/_
+Workflows では、複数のパイプラインを__並列に__実行することができます。以下の例は、ビルド後に開発用 (dev) イメージの push &amp;amp; deploy と本番用 (release) イメージの push &amp;amp; deploy を並列に実行しています。</description></item><item><title>Go でコメントアウトせずに素早く複数行スキップさせる</title><link>http://blog-ja.dtan4.net/posts/qiita-5efab45307203c46e424/</link><pubDate>Mon, 18 Apr 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-5efab45307203c46e424/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+TL; DR if false {} でスキップしたい箇所を囲む
+本文 Go では宣言されてるのに使われてない変数があると、ビルド時に hoge declared and not used といった感じで怒られます。 Go 書いてる時、デバッグ目的で処理を飛ばそうと複数行コメントアウトしたくなる時があります。が、適当にやると変数の宣言だけが残って前述のように怒られることがあります。この場合は改めて宣言箇所だけコメントアウトすればビルドが通りますが、まあ面倒ですよね。
+こういう時は、該当箇所を if false {} で囲ってやればよいです。見てわかるように、常に false なのでブロックの中は実行されません。
+Example 元のコード package main import ( &amp;#34;fmt&amp;#34; ) func main() { hogeMessage := &amp;#34;hoge&amp;#34; fugaMessage := &amp;#34;fuga&amp;#34; piyoMessage := &amp;#34;piyo&amp;#34; hogehogeMessage := &amp;#34;hogehoge&amp;#34; fmt.Println(hogeMessage) fmt.Println(fugaMessage) fmt.Println(piyoMessage) fmt.Println(hogehogeMessage) } $ go run hoge.go hoge fuga piyo hogehoge コメントアウトすると… package main import ( &amp;#34;fmt&amp;#34; ) func main() { hogeMessage := &amp;#34;hoge&amp;#34; fugaMessage := &amp;#34;fuga&amp;#34; piyoMessage := &amp;#34;piyo&amp;#34; hogehogeMessage := &amp;#34;hogehoge&amp;#34; fmt.</description></item><item><title>Ubuntu や Alpine Linux をワンコマンドで瞬時に立ち上げる</title><link>http://blog-ja.dtan4.net/posts/qiita-3be396665f9305428f4f/</link><pubDate>Thu, 14 Apr 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-3be396665f9305428f4f/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+alpine コマンド、centos コマンド、ubuntu コマンド Docker 環境を用意して以下のエイリアスを .bashrc なり .zshrc に書いておくと、ワンコマンドで Linux の対話環境が立ち上がって便利
+alias alpine=&amp;#39;docker run -it --rm alpine:3.3 /bin/sh&amp;#39; alias centos=&amp;#39;docker run -it --rm centos:7 /bin/bash&amp;#39; alias ubuntu=&amp;#39;docker run -it --rm ubuntu:14.04 /bin/bash&amp;#39; $ alpine / # apk update fetch http://dl-cdn.alpinelinux.org/alpine/v3.3/main/x86_64/APKINDEX.tar.gz fetch http://dl-cdn.alpinelinux.org/alpine/v3.3/community/x86_64/APKINDEX.tar.gz v3.3.3-20-gb700737 [http://dl-cdn.alpinelinux.org/alpine/v3.3/main] v3.3.3-9-gfc38db2 [http://dl-cdn.alpinelinux.org/alpine/v3.3/community] OK: 5858 distinct packages available $ centos [root@dfaaba07c44b /]# yum update Loaded plugins: fastestmirror, ovl base | 3.6 kB 00:00:00 extras | 3.</description></item><item><title>Alpine Linux でタイムゾーンを変更する</title><link>http://blog-ja.dtan4.net/posts/qiita-8359e389b95cbc60952d/</link><pubDate>Sat, 06 Feb 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-8359e389b95cbc60952d/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+スリムな Docker イメージを作るため、gliderlabs/alpine イメージをベースにバイナリを一個だけポンと置いて運用するみたいなことをしています。 gliderlabs/alpine イメージは（というかほとんどの OS イメージは）タイムゾーンが GMT (UTC+0) のままなので、時刻依存の作業をさせるときには気をつけないといけません。日本時間 (UTC+9) の感覚で書いたら、9時間遅れて実行されたとかログの時刻がずれるとか起こりえます。
+まっさらの状態で date を打つと…
+$ docker run --rm gliderlabs/alpine:3.3 date Sat Feb 6 06:47:37 UTC 2016 タイムゾーンの設定 メジャーな Linux ディストリビューションと同じく、/etc/localtime を変更すればよいです。zoneinfo とかはそのままだと用意されていないので、apk で tzdata パッケージをインストールする必要があります。
+Dockerfile で日本標準時 Asia/Tokyo に設定する場合は以下のようになります。ここで欲しいのは /usr/share/zoneinfo/Asia/Tokyo だけなので、tzdata はそれだけ抜き取ったら消しちゃいます。
+FROMgliderlabs/alpine:3.3RUN apk --update add tzdata &amp;amp;&amp;amp; \ cp /usr/share/zoneinfo/Asia/Tokyo /etc/localtime &amp;amp;&amp;amp; \ apk del tzdata &amp;amp;&amp;amp; \ rm -rf /var/cache/apk/*この Dockerfile からビルドしたイメージで date を叩くと…</description></item><item><title>Emacs で行番号を指定してファイルを開く</title><link>http://blog-ja.dtan4.net/posts/qiita-9e2eb59373f0b2b5f17c/</link><pubDate>Sat, 26 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-9e2eb59373f0b2b5f17c/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+:bulb: 以下、emacs の部分は、あなたの Emacs 利用形態（新しい Emacs ではなくすでに起動している Emacs 上で開くとか）に合わせて emacsclient -n とかにしてください。
+ターミナルから行番号を指定して開く Emacs のコマンドラインヘルプを見ると…
+$ emacs --help Usage: /usr/local/opt/emacs-mac/bin/emacs [OPTION-OR-FILENAME]... Run Emacs, the extensible, customizable, self-documenting real-time display editor. The recommended way to start Emacs for normal editing is with no options at all. (snip) Action options: FILE visit FILE using find-file +LINE go to line LINE in next FILE +LINE:COLUMN go to line LINE, column COLUMN, in next FILE (snip) ということで、/path/to/hoge ファイルの__20行目__を開くときは</description></item><item><title>GitHub にパスワードとかセンシティブなファイルを push してしまったときの対処法</title><link>http://blog-ja.dtan4.net/posts/qiita-34e41e3bd40a43fd8cbf/</link><pubDate>Sat, 19 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-34e41e3bd40a43fd8cbf/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+.gitignore し忘れて他人に見えちゃマズいファイル（パスワードをベタ書きしたファイルや AWS_SECRET_ACCESS_KEY を書いたファイルとか）を git commit しちゃった！そんなときは
+$ git reset --hard HEAD~ すればすぐ何もなかったことにできます。
+が！そこで気付かずに GitHub へ git push してしまった！こうなると容易に何もなかったことにはできません。
+この記事では、こういうときに何もなかったことにする方法を紹介します。
+そのデータを無効にする 特に Public Repository の場合はすでにそのデータが他人の目に触れていた…ということも十分ありえます。AWS_SECRET_ACCESS_KEY なんかは取得用のクローラが存在するとも聞きます。ので、まずは不正利用されても影響が出ないように、__パスワードの書き換えやトークンの無効化__を施しましょう。
+（この時点でもう何もなかったことになってない気がする）
+git の履歴から該当のファイルを消す git reset と git filter-branch 2つの方法があります。
+git reset (2015-12-29 15:00 追記) git reset だとセンシティブファイル以外の作業履歴もすべて消去されてしまうので、それらを残しておきたい場合は後述 git filter-branch でコミットを書き換えるようにしてください。 (追記終わり)
+該当ファイルを git commit してすぐ気づいた (3コミット以内) なら、まだ git reset で消せます。
+$ git reset --hard HEAD~2 ＃ 消すコミットの数 git filter-branch 気づいたのはそこから何コミットもしたあと…だと git reset でそこまでの履歴を全部消すのは現実的ではありません。そんな時に役立つのが git filter-branch です。filter-branch は普段見慣れない（であってほしい）ですが、__大量のコミットを機械的に書き換える__コマンドです。今回みたいにファイルを消す以外にも、リポジトリ全体のコミットオーサーの書き換えとかも一発でできます。</description></item><item><title>Terraform と CI で実現するインフラのコード化と構築の自動化</title><link>http://blog-ja.dtan4.net/posts/qiita-ab1671d657f1571e59d8/</link><pubDate>Sat, 19 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-ab1671d657f1571e59d8/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Wantedly Advent Calendar 2015 __18__日目です。
+インフラチームインターンの @dtan4 です。
+Wantedly では Terraform を用いたインフラのコード化 (Infrastructure as Code) を全面的に取り入れています。インフラリソースの追加や修正は、コードを書くこと・CI 上での自動適用によって行われています。
+この記事では、今年5月から半年以上の間 Terraform を運用してきた中での
+なぜ Terraform でインフラをコード化しようとしたのか どのように Terraform を運用しているのか Terraform 運用にあたって注意すべき点 既存リソースから Terraform コードを生成する Terraforming について ということを紹介したいと思います。
+Terraform とは Terraform は、Vagrant などで有名な HashiCorp が作っている__コードからインフラリソースを作成する・コードでインフラを管理する__ためのツールです。AWS, GCP, Azure, DigitalOcean といったクラウドプロバイダや DNSimple, Mailgun, Rundeck を含む多くの SaaS に幅広く対応しています。
+コードは JSON 互換である HCL (HashiCorp Configuration Language) で記述します。例えば AWS ELB と EC2 インスタンスは
+# from https://www.</description></item><item><title>Crystal で AWS API を叩く</title><link>http://blog-ja.dtan4.net/posts/qiita-0a93c42a44f9e6cb8b48/</link><pubDate>Wed, 16 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-0a93c42a44f9e6cb8b48/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+この記事は Crystal Advent Calendar 2015 の16日目の記事です :exclamation:
+昨日の記事は @pine613 さんの 『 東京 Crystal 勉強会 #3 in 恵比寿 』 を開催します!!!! でした。1/22 に第三回を開催とのことでぜひ参加したいのですが、3日後の 1/25 が修論提出日だったりします。善処できるよう努力します。
+さて、今回は Crystal で AWS の API を叩いてみた、というお話です。
+Crystal から AWS を触りたい 普段 AWS なインフラやってる人間なので、Crystal で AWS を操作できないものかと考えました。やっぱネイティブバイナリ吐けるっていうのはツール作る人間にとって魅力的なんですよ…
+Ruby, Python, JavaScript, Java, Go, &amp;hellip; といったいわゆるメジャーな言語から AWS を操作する場合は、AWS が公式に提供している SDK を使うのが一般的です。提供言語の一覧は以下のページに有ります。
+AWS のツール | アマゾン ウェブ サービス（AWS 日本語）
+ですが、ご覧のとおり Erlang/Elixir や Crystal といったマイナーな言語についてはまだ SDK は提供されていません。Erlang/Elixir は一部サービスに対応した非公式 SDK gleber/erlcloud があります。が、俺たちの Crystal には非公式 SDK すらありません。</description></item><item><title>プロダクトに名前をつける時に気をつけたいこと</title><link>http://blog-ja.dtan4.net/posts/qiita-639928bcfc6ac0a69a57/</link><pubDate>Mon, 14 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-639928bcfc6ac0a69a57/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+私は今まで、数々のアプリケーションやライブラリをつくって GitHub / RubyGems 等で公開してきました。ここで毎回注意しているのが__プロダクトの名前の付け方__です。この記事では、自分が何に気をつけて名付けをしているのかを紹介します。
+ユニークな名前にする ユニークな名前にする、つまり__既に公開されているものとなるべく名前が被らないようにすべき__です。ユニークな名前にすることでググラビリティ（検索した時のヒットしやすさ）を高めることができますし、エゴサーチもしやすくなります。
+同じ名前のプロダクトがすでに存在しないかチェックする 自分はよさ気な名前が思いついたら、まず Google 検索と GitHub の一番上にある検索ボックスに突っ込みます。同じ名前のリポジトリがすでにあるかどうかを調べるためです。ハイフンとかを含めるなら名前をダブルクォートで囲むのが良いでしょう。
+幸運にもリポジトリが一件もヒットしない場合は、その名前を採用します。もしヒットした場合でも、数が少ない &amp;amp; 全然開発されていなかったり (Initial commit だけみたいな)、Star が全然ついてない場合は採用することがあります。自分のほうが有名になってやるぞ！という勢いです。
+プロダクトを RubyGems や npm などのパッケージ管理システムに上げる場合は、そこでも名前を検索する必要があります。ここで被っているとさすがに登録できないので…
+DeNA が作っている JSX と React.js の JSX や、プログラミング言語 Go と Thoughtworks が出してる GoCD とか、正直どうしてぶつかった感があります…
+辞書に載っているような単語はなるべく避ける 英語の普通名詞や固有名詞はなるべく避けた方がいいです。よほどそのプロダクトが（それこそ Ruby とか Go みたいに）ヒットしない限り、その名前単体で Google 検索して引っかかることは相当厳しいでしょう。
+とはいえ、適当にタイプした母音のないような単語は好ましくありません。発音しにくい &amp;amp; 覚えにくいというのはマイナスです。単語をそのまま使わず、少しもじったり組み合わせたりするとよいでしょう。フレーズを作って、単語の頭文字をつなげ合わせるのもよいです。Linux (Linux Is Not UniX) のような再帰的頭字語を作れるとカッコいいです。
+あるいは、英語以外の単語・フレーズで考えるとユニーク性は増します。Google 翻訳の左欄に日本語なり英語の単語を入れて、右欄の言語を変えまくってよさそうな表記を探したりします。
+ラテン語とかエスペラントとかはそうそう被らないでしょう（README に説明を書くべきだとは思いますが）。日本語のローマ字表記や中国語のピンインも意外と穴場だったりします。
+キーボードでタイプしやすい名前にする :warning: 世の中 Dvorak 配列とか AZERTY 配列とかありますが、自分は大多数を占める QWERTY 配列における打ちやすさを考えています。 :warning:</description></item><item><title>クラウドサービスを活用して README にバッジをペタペタ貼る</title><link>http://blog-ja.dtan4.net/posts/qiita-13b0ea9edf5b99926446/</link><pubDate>Sat, 31 Oct 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-13b0ea9edf5b99926446/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+最近の GitHub に上げてある OSS リポジトリには、README にいろんなバッジが貼られています。リポジトリに連携しているクラウドサービスのステータスを表すものがほとんどです。 自分は README にバッジを貼りたい派です。たとえば dtan4/terraforming だとこういう感じです。
+最近はバッジの種類も増えているので、整理のためにもどういうのがあるかまとめてみようと思います。
+自分がよく README に貼っているバッジ 自分が書く RubyGems については、以下の6個のバッジを必ずつけるようにしています。
+Travis CI
+言わずと知れた CI サービス。現在の master が CI 通っている (passing) かコケている (failed) かがわかります。リポジトリのメンテナンス状況を把握するのによいです。
+クリックすれば、そのリポジトリのテスト結果を見ることができます。
+Code Climate
+ソースコードの品質チェックをしてくれるサービスです。リポジトリ内のコード重複や複雑性を解析して GPA (最高 4.0) を算出してくれます。このリポジトリのコード品質がどうであるか、をひと目で確認できます。Ruby の他にも Node.js や PHP, Python に対応してます。
+最近はテストカバレッジの取得にも対応しました。Travis CI のテスト後にテストカバレッジが Code Climate へアップロードされます。 以前はテストカバレッジの表示に Coveralls を使っていましたが、Code Climate でひとまとめに見られるようになったので最近はこっちを使うようにしています。
+クリックすれば、そのリポジトリの詳細な解析結果と行単位のテストカバレッジを見ることができます。
+Gemnasium
+アプリケーションの依存管理をチェックしてくれるサービスです。Ruby だと Gemfile, Gemfile.lock, *.gemspec を解析し、指定されている依存ライブラリのバージョンが古くなったら警告を出してくれます。Ruby の他にも Node.</description></item><item><title>tmux で Prefix key が押されているかどうかを表示する</title><link>http://blog-ja.dtan4.net/posts/qiita-363e92525e7c5a16f3fc/</link><pubDate>Wed, 07 Oct 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-363e92525e7c5a16f3fc/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+tmux でペイン分割とかウィンドウ作成するときとかにキーバインドとして使う Prefix key (C-b とか C-t とか設定されてる) ですが、誤動作を防ぐためにいま Prefix key が押されているのかどうなのか視覚的に確認したいことがあります。
+以下のように .tmux.conf を書くことで、Prefix key が押された時に Status line の色を下動画のように反転させられます。
+set-option -g status-left '#[fg=cyan,bg=#303030]#{?client_prefix,#[reverse],} #H[#S] #[default]' (Prefix key は C-t に設定)
+重要なのはこれ
+#{?client_prefix,#[reverse],} .tmux.conf では ?&amp;lt;condition&amp;gt;,&amp;lt;true action&amp;gt;,&amp;lt;false action&amp;gt; の形で三項演算子をかけます。で、client_prefix は Prefix key が押されていたら 1 (true) になるというわけです。 今回は色を変えただけですが、押されている / いないときだけ何かしら文字を表示することももちろん可能です。
+注意点があって、例えば Prefix key が押された時だけ黄色背景黒文字 (fg=black, bg=yellow) にしようとして
+#{?client_prefix,#[fg=black,bg=yellow],} と愚直に書くと
+のように表示がバグります。#[fg=black,bg=yellow] 内のコンマが三項演算子2つめのコンマと解釈されているようです。
+こうしたいときは、#[] を分割すればよいです。
+#{?client_prefix,#[fg=black]#[bg=yellow],} REF give a hint when press prefix key in tmux - Stack Overflow OpenBSD manual pages (tmux)</description></item><item><title>awscli + jq + peco + tmux-cssh を使って複数 EC2 インスタンスへ簡単 SSH</title><link>http://blog-ja.dtan4.net/posts/qiita-88545bbd2dcdb590b5a7/</link><pubDate>Mon, 28 Sep 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-88545bbd2dcdb590b5a7/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+TL;DR 必要なもの (awscli, jq, peco, tmux, tmux-cssh) をすべて入れた状態で
+$ sh -c &amp;#34;tmux-cssh -i &amp;lt;ssh_key&amp;gt; -u &amp;lt;ssh_user&amp;gt; $(aws ec2 describe-instances | jq -r &amp;#39;.Reservations[] | .Instances[] | select(.State.Name != &amp;#34;terminated&amp;#34;) | select(has(&amp;#34;PublicIpAddress&amp;#34;)) | [.PublicIpAddress,.PrivateIpAddress,.State.Name,(.Tags[] | select(.Key == &amp;#34;Name&amp;#34;) | .Value // &amp;#34;&amp;#34;)] | join(&amp;#34;\t&amp;#34;)&amp;#39; | peco | awk &amp;#39;{ print $1 }&amp;#39; | tr &amp;#39;\n&amp;#39; &amp;#39; &amp;#39;)&amp;#34; とすることで、peco で EC2 インスタンスを選んで同時に SSH アクセスすることができます。
+:warning: tmux 上で生活している方は、一度 tmux detach して tmux の外に出ないと tmux-cssh が実行できません。 また、ターミナル起動時に自動で tmux を立ち上げる設定は無効化しておく必要があります。</description></item><item><title>CoreOS でも tcpdump したい (CoreOS toolbox)</title><link>http://blog-ja.dtan4.net/posts/qiita-50fd75b56660ed8aa158/</link><pubDate>Mon, 28 Sep 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-50fd75b56660ed8aa158/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+CoreOS 上でも tcpdump でネットワークデバッグする話です。
+tcpdump くらいあるやろ core@core-01 ~ $ tcpdump -bash: tcpdump: command not found 無いんですよねー
+CoreOS toolbox https://github.com/coreos/toolbox
+CoreOS は OS 本体に何も入ってない（からアプリケーションは Docker コンテナとして動かす）ことで有名ですが、上記のように tcpdump すら入ってないので特に低レイヤーの調査で困ることがあります。それを補助するために、CoreOS が公式に toolbox というのを提供しています。
+実際に使ってみましょう。
+core@core-01 ~ $ /usr/bin/toolbox latest: Pulling from fedora 48ecf305d2cf: Pull complete ded7cd95e059: Pull complete fedora:latest: The image you are pulling has been verified. Important: image verification is a tech preview feature and should not be relied on to provide security.</description></item><item><title>Emacs で Crystal を書く</title><link>http://blog-ja.dtan4.net/posts/qiita-b098d11e48453e1c6ee0/</link><pubDate>Sat, 01 Aug 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-b098d11e48453e1c6ee0/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+みんな大好き Emacs で Crystal を書くための記事です。
+Ruby ライクなシンタックスを持っているということもあって意外と ruby-mode でいけるのでは感はあります。実際、Crystal 独自機能を使わないようなコードを書く分には十分です。 ただ、型宣言とかマクロのような Crystal 独特のものを書こうとすると ruby-mode ではシンタックスハイライトが死にます。やはり Crystal に合わせたメジャーモードを使いたいところです。
+ruby-mode でマクロを表示させた時の悲しい例: そして Crystal Wiki の Editor support で Emacs がハブられている！どういうことだ！
+メジャーモード jpellerin/emacs-crystal-mode
+crystal-mode があります。が、このメジャーモードは今のとこ MELPA とかに登録されている気配が無いです… 1 el-get 使いなら以下の一文を init.el にでも書いときましょう。
+(el-get-bundle jpellerin/emacs-crystal-mode) マクロもちゃんとハイライトされてます。String interpolation がまだあやしいけど… 自分は使ってないですが、flycheck 用のコードも入っているみたいです。
+マイナーモード マイナーモードに関しては、Ruby のものを流用することができます。 たとえば、
+ruby-block end に対応する行をハイライトしてくれる ruby-end def, if 等に対応した end を自動で挿入してくれる (add-hook &amp;#39;crystal-mode-hook &amp;#39;ruby-block-mode) (add-hook &amp;#39;crystal-mode-hook &amp;#39;ruby-end-mode) そのほか Projectfile は crystal-mode で開くよう設定しておきましょう。</description></item><item><title>Terraforming で既存のインフラを Terraform 管理下におく</title><link>http://blog-ja.dtan4.net/posts/qiita-345c56281ab0e87d6646/</link><pubDate>Mon, 22 Jun 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-345c56281ab0e87d6646/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Terraform は、主にインフラをスクラッチから構築する際に有用なツールです。 ですが、いま動いている既存のインフラに Terraform を導入したい、既存のインフラを Terraform で管理したいと思う方もいるのではないでしょうか。 今回は、Terraforming を使って既存のインフラを Terraform で管理できるようにする方法を紹介します。
+Terraforming とは Terraforming は、AWS の API を叩いて既存のインフラリソースから Terraform のコードを生成するツールです。 兄弟分に、DNSimple 用の Terraforming::DNSimple があります。
+インストール RubyGems として公開されているので、
+$ gem install terraforming また、Docker Image も公開してあるので、そちらを使いたい方は
+$ docker pull quay.io/dtan4/terraforming:latest 使い方 tf 形式の出力 予め AWS のクレデンシャルを環境変数に入れておきます。 Mac ユーザなら envchain おすすめです。
+export AWS_ACCESS_KEY_ID=XXXXXXXXXXXXXXXXXXXX export AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx export AWS_DEFAULT_REGION=xx-yyyy-0 リソース名を指定するだけだと、tf 形式で出力されます。 S3 bucket の場合だと:
+$ terraforming s3 resource &amp;#34;aws_s3_bucket&amp;#34; &amp;#34;hoge&amp;#34; { bucket = &amp;#34;hoge&amp;#34; acl = &amp;#34;private&amp;#34; } resource &amp;#34;aws_s3_bucket&amp;#34; &amp;#34;fuga&amp;#34; { bucket = &amp;#34;fuga&amp;#34; acl = &amp;#34;private&amp;#34; } これを s3.</description></item><item><title>Amazon S3 で Terraform の状態管理ファイル terraform.tfstate を管理 / 共有する</title><link>http://blog-ja.dtan4.net/posts/qiita-04632f1c2f35388a3283/</link><pubDate>Mon, 11 May 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-04632f1c2f35388a3283/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+2017-06-17: この記事はもう古いです。Terraform v0.8.x 以下を対象としています。 2017/03 にリリースされた Terraform v0.9.0 で remote config 周りの仕様が大きく変わりました。 S3 に置くファイル形式は変わってないですが、特に CLI 周りで後方互換性のない変更が入っています。例えば terraform remote コマンドが無くなっています。
+詳しくは以下の公式ドキュメントを読んで下さい。
+Backends - Terraform by HashiCorp Backends: Migrating From 0.8.x and Earlier - Terraform by HashiCorp というわけで、以下の記事は Terraform v0.8.x 以下を対象としたものになります。
+2015-05-08 にリリースされた Terraform v0.5.0 にて Terraform の状態管理ファイルである terraform.tfstate を Amazon S3 で管理する機能が追加されたので、試してみました。
+S3 Remote State Backend by apparentlymart · Pull Request #1723 · hashicorp/terraform
+前置き: terraform.tfstate の管理とか共有 terraform.</description></item><item><title>PostgreSQL コンテナの backup / restore をする</title><link>http://blog-ja.dtan4.net/posts/qiita-5147a3f858d5919965c9/</link><pubDate>Thu, 23 Apr 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-5147a3f858d5919965c9/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Docker コンテナとして動いている PostgreSQL からデータを backup する、またデータを restore する（PostgreSQL コンテナにデータを注入する）方法です。 ここで使っているイメージは Docker Hub 公式の postgres イメージです。今回は postgres:9.4.1 を使いました。
+$ docker run -d -p 5432:5432 --name postgres postgres:9.4.1 backup する $ docker exec [container_id or name] pg_dumpall -U postgres &amp;gt; dump.sql コンテナ内のデータベース全体が SQL として dump されます。
+-- -- PostgreSQL database cluster dump -- SET default_transaction_read_only = off; SET client_encoding = &amp;#39;UTF8&amp;#39;; SET standard_conforming_strings = on; -- -- Roles -- CREATE ROLE postgres; ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION; .</description></item><item><title>開発版 Docker &amp; Docker Registry の検証環境を作って試してみる</title><link>http://blog-ja.dtan4.net/posts/qiita-0e34a09923579e7a6670/</link><pubDate>Thu, 16 Apr 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-0e34a09923579e7a6670/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Docker イメージのリポジトリをを自前で管理するための Docker Private Registry というものがあります。これまで docker/docker-registry にて Python で開発されていて、現在のバージョンは 0.9.1 です。 この docker-registry、使っている Python の HTTP サーバが buggy なのか push/pull でよく失敗するという問題がありました…
+ところで、この Docker Registry の次期バージョンは Go でスクラッチから開発されています。リポジトリも docker/distrbution に移りました。 最初のリリースバージョンは 2.0 になる予定で、しかもリリース日予定は 2015-04-16（たぶん西海岸時間）です。 なんだか期待が持てます :+1:
+この registry v2 ですが、API も v1 -&amp;gt; v2 に上がっているので 現在リリースされている Docker 1.5 以下は対応していません（push/pull できない）。 registry v2 と同時リリースされる Docker 1.6 から対応する予定です。
+=== 2015-04-16 18:40 追記 一応 README.md には Docker 1.5+ サポートするって書いてあるんですよね…
+An implementation of the Docker Registry HTTP API V2 for use with docker 1.</description></item><item><title>CoreOS + flannel で複数ホスト間コンテナ通信をする</title><link>http://blog-ja.dtan4.net/posts/qiita-8f9cf40aabd2e6c9a494/</link><pubDate>Thu, 02 Apr 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-8f9cf40aabd2e6c9a494/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+CoreOS が提供する flannel を使って、複数の CoreOS マシンを跨いで Docker コンテナ同士通信できるようにする、というお話です。
+flannel もともと Kubernates には似たようなホスト間通信機能がついていたのですが、Google Compute Engine (GCE) 上でしか使えないという欠点がありました。これを取り出し、汎用的に使えるようにしたのが flannel です。
+また、似た機能を持つものに weave がありますが、weave は導入が少々面倒な上に相手ホストの IP を明示的に指定してあげないといけません。その点 flannel は CoreOS 上での導入が簡単で、相手の IP を知らなくてもよく透過的に利用できるという利点があります。ホストに割り振られる IP が不定である EC2 + VPC 構成でも使いやすいでしょう。
+イメージ図はこんな感じです。
+(from https://github.com/coreos/flannel/blob/master/packet-01.png)
+試してみる 以下で紹介する CoreOS VM を含めたサンプルリポジトリです。あわせてご利用ください: dtan4/coreos-flannel-sample
+cloud-config まず cloud-config はこんな感じです。flanneld.service というのを定義しています。
+#cloud-config coreos: etcd: discovery: https://discovery.etcd.io/&amp;lt;token&amp;gt; addr: $public_ipv4:4001 peer-addr: $public_ipv4:7001 fleet: public-ip: $public_ipv4 flannel: interface: $public_ipv4 units: - name: etcd.service command: start - name: fleet.</description></item><item><title>Yosemite と Mavericks 間で AirDrop したい</title><link>http://blog-ja.dtan4.net/posts/qiita-3b89ed8c5226a6578b43/</link><pubDate>Thu, 12 Mar 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-3b89ed8c5226a6578b43/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Mac 同士で Wifi / Bluetooth を使ってファイルのやりとりをする AirDrop、Mavericks 同士とか Yosemite 同士というふうに OS のバージョンが一致していれば問題はないのですが、Mavericks &amp;lt;=&amp;gt; Yosemite といふうに OS をまたぐと相手のマシンが表示されません。 さっさと Yosemite に上げるという解決策もありますが、そうも行かない場合はあります。
+解決策 __Yosemite 側__の AirDrop 画面で「お探しの相手が表示されませんか？」を押すと、「古い機種の Mac を検索」というボタンが出てきます。
+このボタンを押すと、Mavericks マシンが AirDrop 一覧に出てきます。
+REF Airdrop not working between Mavericks and Yosemite | Apple Support Communities</description></item><item><title>OS X Yosemite で Nokogiri gem を bundle install</title><link>http://blog-ja.dtan4.net/posts/qiita-34c9ebd5ce7bfa0f133b/</link><pubDate>Tue, 24 Feb 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-34c9ebd5ce7bfa0f133b/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+mac nokogiri インストール でググれば山のように出てくるけど、一応自分のやった方法も書き残しておきます。
+バージョン Mac OS X 10.10.2 Ruby 2.1.5 (by rbenv) Nokogiri 1.6.3.1 bundle install する 何も考えずに bundle install したら、libiconv が無いと言われました。
+Gem::Ext::BuildError: ERROR: Failed to build gem native extension. /Users/dtan4/.anyenv/envs/rbenv/versions/2.1.5/bin/ruby -r ./siteconf20150224-35319-1dn56el.rb extconf.rb Building nokogiri using packaged libraries. ----- libiconv is missing. please visit http://nokogiri.org/tutorials/installing_nokogiri.html for help with installing dependencies. ----- *** extconf.rb failed *** Could not create Makefile due to some reason, probably lack of necessary libraries and/or headers.</description></item><item><title>Ruby で HTTP ステータスコード一覧を出力するワンライナー</title><link>http://blog-ja.dtan4.net/posts/qiita-19a28356320652cd48cc/</link><pubDate>Tue, 17 Feb 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-19a28356320652cd48cc/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+$ ruby -r rack/utils -e &amp;#39;Rack::Utils::HTTP_STATUS_CODES.each_pair { |code, desc| puts &amp;#34;#{code} #{desc}&amp;#34; }&amp;#39; 100 Continue 101 Switching Protocols 102 Processing 200 OK 201 Created 202 Accepted ... 500 Internal Server Error 501 Not Implemented 502 Bad Gateway 503 Service Unavailable 504 Gateway Timeout 505 HTTP Version Not Supported 506 Variant Also Negotiates 507 Insufficient Storage 508 Loop Detected 510 Not Extended 511 Network Authentication Required HTTP ステータスコード一覧、Rack の Rack::Util モジュールに定数定義されている（コード該当箇所）ので、それを引っ張ってきているだけ。 peco にリダイレクトして絞り込みとかできる。</description></item><item><title>grep の出力をバッファさせない</title><link>http://blog-ja.dtan4.net/posts/qiita-f14f3c10d73e85ff30af/</link><pubDate>Sun, 15 Feb 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-f14f3c10d73e85ff30af/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+grep コマンドは、何もしないと出力をバッファする（一旦溜め込む）ようになっています。
+あるファイル全体とか固定のデータに対して grep する場合は特に気にならないでしょう。 しかしストリーミングデータを扱う場合、例えば何らかのログファイルを tail -f したものに対して grep すると、複数行がまとめて遅延して出力されてしまいます。 ここは元のログが出力されると（ほぼ）同時に、リアルタイムに grep 結果も出力してほしいところです。
+解決策: --line-buffered オプション grep に --line-buffered オプションをつけると、出力がバッファされることなくリアルタイムに表示されるようになります！
+$ tail -f /var/log/access.log | grep -E &amp;#39;\.png$&amp;#39; --line-buffered --line-buffered は、「1行単位で出力させる」というオプションです。BSD grep と GNU grep ともに用意されているので、Mac ユーザも Linux ユーザも安心です。
+man 見てみましょう。
+# grep (BSD grep) 2.5.1-FreeBSD --line-buffered Force output to be line buffered. By default, output is line buffered when standard output is a terminal and block buffered otherwise.</description></item><item><title>Rack 1.6 な Sinatra アプリケーションに Docker コンテナ外からアクセスできなかった</title><link>http://blog-ja.dtan4.net/posts/qiita-c7c47b845b6f15c4076f/</link><pubDate>Wed, 21 Jan 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-c7c47b845b6f15c4076f/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+[2015-01-24 05:00] @5t111111 さんのコメントに基づき、Rack 1.6 のデフォルト挙動について追記 Rack 1.6.0 を使用した Sinatra アプリケーションを Docker 上で起動したところ、コンテナ外からの接続ができませんでした。EXPOSE 9292 して -p 9292:9292 しているにも関わらず、です。 とりあえずの対処法を書いておきます。
+アプリケーション構成例 最小構成の Sinatra アプリケーションを Docker 上で動かすためのファイル例を Gist に上げました。
+https://gist.github.com/dtan4/373907a001f3f3ebbd9c
+はじめに言っておくと、Ruby のバージョンを変えること（2.1.5 にするとか）は解決になりませんでした。Ruby 2.2.0 のせいとかではない。
+あと Docker のバージョンは （2015-01-21 最新の）1.4.1 です。
+対処法1: Rack 1.5.2 を使う 一つ前のバージョンである Rack 1.5.2 であればこの問題は発生しません。Gemfile でバージョン指定しましょう。
+gem &amp;quot;rack&amp;quot;, &amp;quot;~&amp;gt; 1.5.2&amp;quot; # or &amp;quot;= 1.5.2&amp;quot; 対処法2: rackup に -o 0.0.0.0 オプションをつける rackup --help より、
+-o は ListenAddress を設定するためのオプションです。</description></item><item><title>nginx.conf で環境変数を読み込む</title><link>http://blog-ja.dtan4.net/posts/qiita-0fe6cca5487698afa68c/</link><pubDate>Fri, 12 Dec 2014 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-0fe6cca5487698afa68c/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Docker container で nginx を起動するときとか、nginx.conf で何かしらのパラメータを動的に設定したいことがあると思います。server_name とか。 今回は nginx.conf で何とかして環境変数を読み込む手法を紹介します。
+TL;DR __env ディレクティブ__と ngx_http_perl_module (or lua_nginx_module) を使って、環境変数を nginx 変数に設定する。
+Example server_name を環境変数 SERVER_NAME から動的に読み込む例を示します。
+user nginx; worker_processes 4; env SERVER_NAME; http { perl_set $server_name_from_env &amp;#39;sub { return $ENV{&amp;#34;SERVER_NAME&amp;#34;}; }&amp;#39;; # ... server { server_name $server_name_from_env; # ... } } こうしておけば、docker run -e SERVER_NAME=hoge.example.com hoge/nginx みたいに都度 SERVER_NAME を設定できます。
+くわしく nginx は起動時に親プロセスの環境変数を引き継ぎません。ですが、env ディレクティブを使えば特定の環境変数を nginx に引き継がせることができます。 env ディレクティブは main コンテキスト、つまり user とかと同じ階層でのみ宣言できます。</description></item><item><title>peco で Docker の container ID を楽に選択する alias</title><link>http://blog-ja.dtan4.net/posts/qiita-839c85d2650e63f662b0/</link><pubDate>Mon, 20 Oct 2014 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-839c85d2650e63f662b0/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Docker 使っていると割りと container ID が必要になるケース多いと思います。 このとき一々 docker ps から container ID を探し出してコピペするのが面倒だったので、alias を定義しました。
+alias -g P=&amp;#39;`docker ps | tail -n +2 | peco | cut -d&amp;#34; &amp;#34; -f1`&amp;#39; docker ps の結果を peco で絞り込みます。 これだと起動しているコンテナの ID しか取れないので、停止中のも取りたい場合は -a オプションを付ければよいです。
+peco に渡す前に tail -n +2 を噛ませていますが、これは「頭から2行目以降を出力する（= 先頭行を飛ばして出力する）」というコマンドです。 docker ps は先頭行にフィールド名ヘッダが入るので、これを除去しています。
+コンテナ停止 $ docker stop P コンテナのログを見る $ docker logs P nsenter を使ってコンテナに入る 予め nsenter を使えるようにしておき、.bashrc や .zshrc で docker-enter コマンドを定義しておく。
+$ docker run --rm -v /usr/local/bin:/target jpetazzo/nsenter OS X で boot2docker 経由の docker-enter を参考までに載せておきます。</description></item><item><title>peco で git のコミットハッシュを選択する alias</title><link>http://blog-ja.dtan4.net/posts/qiita-94ea5bd2f9475c72b9e9/</link><pubDate>Tue, 08 Jul 2014 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-94ea5bd2f9475c72b9e9/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+いちいち git log からコミットハッシュを探しだすのが面倒なので、alias を定義してみました。
+alias -g C=&amp;#39;`git log --oneline | peco | cut -d&amp;#34; &amp;#34; -f1`&amp;#39; 例えば、git show C では peco で選択したコミットの中身をみることができます。 git reset --hard C では選択したコミットまでロールバックできます。
+また、reflog から選択する alias も定義しました。
+alias -g R=&amp;#39;`git reflog | peco | cut -d&amp;#34; &amp;#34; -f1`&amp;#39; git reset --hard R では peco で選択した時点まで操作履歴をロールバックできます。
+See also: dot.zsh/.zshrc.peco - dtan4/dot.zsh</description></item><item><title>Travis CI で最新の MeCab を使う</title><link>http://blog-ja.dtan4.net/posts/qiita-c6a087666296fbd5fffb/</link><pubDate>Sat, 31 May 2014 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-c6a087666296fbd5fffb/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Travis CI には MeCab が入っていない Travis CI の box には最初 MeCab が入っていません。 こういう場合、普通なら .travis.yml の before_install を用いて以下のように MeCab をインストールするでしょう。
+before_install: - sudo apt-get update -qq - sudo apt-get install -qq mecab mecab-ipadic-utf8 libmecab-dev しかし、Travis の apt-get で入ってくる MeCab は古い (0.98) ので、例えば natto gem を使うようなアプリケーションが実行できません。 これでは Travis が赤くなって困るので、何とかして最新版 (2014/05/31 現在 0.996) を入れたいところです。
+解決策: apt-get を使わず直にインストールする 最新の MeCab ソースコードを公式 Google Code から落としてきて、自家ビルド &amp;amp; インストールすれば良いのです。
+基本的に公式インストールガイドの通り MeCab 本体と辞書をインストールすれば良いのですが、
+before_install に書くには行が多い Travis 上ではインストール後に sudo ldconfig もする必要がある と多少面倒くさいです。 そこで、このインストール作業を一括して行うスクリプトを Gist に用意しました。 .</description></item><item><title>brew install boost に失敗した場合の対処法</title><link>http://blog-ja.dtan4.net/posts/qiita-9d868ee277bd37b1e30f/</link><pubDate>Thu, 08 May 2014 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-9d868ee277bd37b1e30f/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+brew install boost した時、以下のエラーを吐いてビルドが失敗した。
+==&amp;gt; ./b2 --prefix=/usr/local/Cellar/boost/1.55.0_1 --libdir=/usr/local/Cellar/boost/ cp &amp;quot;bin.v2/libs/wave/build/darwin-4.2.1/release/link-static/libboost_wave.a&amp;quot; &amp;quot;/usr/local/Cellar/boost/1.55.0_1/lib/libboost_wave.a&amp;quot; ...failed updating 112 targets... ...skipped 20 targets... ...updated 12489 targets... READ THIS: https://github.com/Homebrew/homebrew/wiki/troubleshooting These open issues may also help: Boost 1.55.0 fails to build --universal (https://github.com/Homebrew/homebrew/issues/26951) &amp;quot;bottle blocked by python requirement&amp;quot; is vague in boost 1.55.0_1 upgrade (https://github.com/Homebrew/homebrew/issues/28281) どうやら Python まわりで問題が発生しているっぽい。
+ここで対処法は2つある。Python support を捨てるか System Python を使うかである。
+1. Python support を無効にする デフォルトでは Python support を有効にした boost がインストールされることになっている。 しかし、そもそも他のパッケージの依存物として boost を入れるのなら、Python support は必要ないことがほとんどである。 Python support を無効化してインストールすれば良い。</description></item><item><title>magit でコミットするときに新しいウィンドウを立ち上げないようにする</title><link>http://blog-ja.dtan4.net/posts/qiita-658a8a7ca06aa8c2da4c/</link><pubDate>Fri, 11 Oct 2013 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-658a8a7ca06aa8c2da4c/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+(2019-03-07 追記)
+.emacs.d 大掃除をやってて気づいたのですが、このハックは現代の Emacs + magit では不要になっていました。
+GNU Emacs 26.1 (build 1, x86_64-apple-darwin18.0.0, Carbon Version 158 AppKit 1671) of 2018-11-18 magit-20190306.413 (以下 2013-10-11 時点での投稿)
+2ヶ月ほど前に magit のコミット周りの実装が大きく変わりました。それまではコミットメッセージの入力をミニバッファで行っていましたが、この変更に伴い git-commit-mode というメジャーモードを用いて入力、つまり一つのバッファを占有して行うようになりました。
+本来この git-commit-mode は 同じ ウィンドウ内の別バッファに開くことが意図されており、Linux 版ではこの通りの挙動を示します。 しかし、Mac 版 (Cocoa) Emacs では 新しく ウィンドウを開いて（もう一つ Emacs を起動して）そこに git-commit-mode を開くという挙動を示し、大変面倒くさい感じになっていました。
+2ヶ月間この挙動に悩まされていましたが、この度改善するための設定を発見したため、ここに共有します。
+Mac でも同一ウィンドウ内でコミットアクションを完結させる /Application に Emacs.app を置いた場合は
+(set-variable &amp;#39;magit-emacsclient-executable &amp;#34;/Applications/Emacs.app/Contents/MacOS/bin/emacsclient&amp;#34;) Homebrew で Emacs をインストールした場合は
+(set-variable &amp;#39;magit-emacsclient-executable &amp;#34;/usr/local/Cellar/emacs/24.3/bin/emacsclient&amp;#34;) を init.el などに追記しましょう。
+これで次回から git-commit-mode は 同じ ウィンドウ内の別バッファに立ち上がるようになります。c を2回押したあと、ウィンドウを切り替えてメッセージ入れて C-c C-c したら手動でウィンドウを閉じる・・・といった煩わしさから開放されます。</description></item></channel></rss>

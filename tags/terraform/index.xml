@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Terraform on blog-ja.dtan4.net</title><link>http://blog-ja.dtan4.net/tags/terraform/</link><description>Recent content in Terraform on blog-ja.dtan4.net</description><generator>Hugo -- gohugo.io</generator><language>ja-JP</language><copyright>Copyright &amp;copy; 2020 dtan4 All Rights Reserved</copyright><lastBuildDate>Sat, 19 Dec 2015 00:00:00 +0000</lastBuildDate><atom:link href="http://blog-ja.dtan4.net/tags/terraform/index.xml" rel="self" type="application/rss+xml"/><item><title>Terraform と CI で実現するインフラのコード化と構築の自動化</title><link>http://blog-ja.dtan4.net/posts/qiita-ab1671d657f1571e59d8/</link><pubDate>Sat, 19 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-ab1671d657f1571e59d8/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Wantedly Advent Calendar 2015 __18__日目です。
+インフラチームインターンの @dtan4 です。
+Wantedly では Terraform を用いたインフラのコード化 (Infrastructure as Code) を全面的に取り入れています。インフラリソースの追加や修正は、コードを書くこと・CI 上での自動適用によって行われています。
+この記事では、今年5月から半年以上の間 Terraform を運用してきた中での
+なぜ Terraform でインフラをコード化しようとしたのか どのように Terraform を運用しているのか Terraform 運用にあたって注意すべき点 既存リソースから Terraform コードを生成する Terraforming について ということを紹介したいと思います。
+Terraform とは Terraform は、Vagrant などで有名な HashiCorp が作っている__コードからインフラリソースを作成する・コードでインフラを管理する__ためのツールです。AWS, GCP, Azure, DigitalOcean といったクラウドプロバイダや DNSimple, Mailgun, Rundeck を含む多くの SaaS に幅広く対応しています。
+コードは JSON 互換である HCL (HashiCorp Configuration Language) で記述します。例えば AWS ELB と EC2 インスタンスは
+# from https://www.</description></item><item><title>Terraforming で既存のインフラを Terraform 管理下におく</title><link>http://blog-ja.dtan4.net/posts/qiita-345c56281ab0e87d6646/</link><pubDate>Mon, 22 Jun 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-345c56281ab0e87d6646/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+Terraform は、主にインフラをスクラッチから構築する際に有用なツールです。 ですが、いま動いている既存のインフラに Terraform を導入したい、既存のインフラを Terraform で管理したいと思う方もいるのではないでしょうか。 今回は、Terraforming を使って既存のインフラを Terraform で管理できるようにする方法を紹介します。
+Terraforming とは Terraforming は、AWS の API を叩いて既存のインフラリソースから Terraform のコードを生成するツールです。 兄弟分に、DNSimple 用の Terraforming::DNSimple があります。
+インストール RubyGems として公開されているので、
+$ gem install terraforming また、Docker Image も公開してあるので、そちらを使いたい方は
+$ docker pull quay.io/dtan4/terraforming:latest 使い方 tf 形式の出力 予め AWS のクレデンシャルを環境変数に入れておきます。 Mac ユーザなら envchain おすすめです。
+export AWS_ACCESS_KEY_ID=XXXXXXXXXXXXXXXXXXXX export AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx export AWS_DEFAULT_REGION=xx-yyyy-0 リソース名を指定するだけだと、tf 形式で出力されます。 S3 bucket の場合だと:
+$ terraforming s3 resource &amp;#34;aws_s3_bucket&amp;#34; &amp;#34;hoge&amp;#34; { bucket = &amp;#34;hoge&amp;#34; acl = &amp;#34;private&amp;#34; } resource &amp;#34;aws_s3_bucket&amp;#34; &amp;#34;fuga&amp;#34; { bucket = &amp;#34;fuga&amp;#34; acl = &amp;#34;private&amp;#34; } これを s3.</description></item><item><title>Amazon S3 で Terraform の状態管理ファイル terraform.tfstate を管理 / 共有する</title><link>http://blog-ja.dtan4.net/posts/qiita-04632f1c2f35388a3283/</link><pubDate>Mon, 11 May 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-04632f1c2f35388a3283/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+2017-06-17: この記事はもう古いです。Terraform v0.8.x 以下を対象としています。 2017/03 にリリースされた Terraform v0.9.0 で remote config 周りの仕様が大きく変わりました。 S3 に置くファイル形式は変わってないですが、特に CLI 周りで後方互換性のない変更が入っています。例えば terraform remote コマンドが無くなっています。
+詳しくは以下の公式ドキュメントを読んで下さい。
+Backends - Terraform by HashiCorp Backends: Migrating From 0.8.x and Earlier - Terraform by HashiCorp というわけで、以下の記事は Terraform v0.8.x 以下を対象としたものになります。
+2015-05-08 にリリースされた Terraform v0.5.0 にて Terraform の状態管理ファイルである terraform.tfstate を Amazon S3 で管理する機能が追加されたので、試してみました。
+S3 Remote State Backend by apparentlymart · Pull Request #1723 · hashicorp/terraform
+前置き: terraform.tfstate の管理とか共有 terraform.</description></item></channel></rss>

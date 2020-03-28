@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Gem on blog-ja.dtan4.net</title><link>http://blog-ja.dtan4.net/tags/gem/</link><description>Recent content in Gem on blog-ja.dtan4.net</description><generator>Hugo -- gohugo.io</generator><language>ja-JP</language><copyright>Copyright &amp;copy; 2020 dtan4 All Rights Reserved</copyright><lastBuildDate>Mon, 14 Dec 2015 00:00:00 +0000</lastBuildDate><atom:link href="http://blog-ja.dtan4.net/tags/gem/index.xml" rel="self" type="application/rss+xml"/><item><title>プロダクトに名前をつける時に気をつけたいこと</title><link>http://blog-ja.dtan4.net/posts/qiita-639928bcfc6ac0a69a57/</link><pubDate>Mon, 14 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-639928bcfc6ac0a69a57/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+私は今まで、数々のアプリケーションやライブラリをつくって GitHub / RubyGems 等で公開してきました。ここで毎回注意しているのが__プロダクトの名前の付け方__です。この記事では、自分が何に気をつけて名付けをしているのかを紹介します。
+ユニークな名前にする ユニークな名前にする、つまり__既に公開されているものとなるべく名前が被らないようにすべき__です。ユニークな名前にすることでググラビリティ（検索した時のヒットしやすさ）を高めることができますし、エゴサーチもしやすくなります。
+同じ名前のプロダクトがすでに存在しないかチェックする 自分はよさ気な名前が思いついたら、まず Google 検索と GitHub の一番上にある検索ボックスに突っ込みます。同じ名前のリポジトリがすでにあるかどうかを調べるためです。ハイフンとかを含めるなら名前をダブルクォートで囲むのが良いでしょう。
+幸運にもリポジトリが一件もヒットしない場合は、その名前を採用します。もしヒットした場合でも、数が少ない &amp;amp; 全然開発されていなかったり (Initial commit だけみたいな)、Star が全然ついてない場合は採用することがあります。自分のほうが有名になってやるぞ！という勢いです。
+プロダクトを RubyGems や npm などのパッケージ管理システムに上げる場合は、そこでも名前を検索する必要があります。ここで被っているとさすがに登録できないので…
+DeNA が作っている JSX と React.js の JSX や、プログラミング言語 Go と Thoughtworks が出してる GoCD とか、正直どうしてぶつかった感があります…
+辞書に載っているような単語はなるべく避ける 英語の普通名詞や固有名詞はなるべく避けた方がいいです。よほどそのプロダクトが（それこそ Ruby とか Go みたいに）ヒットしない限り、その名前単体で Google 検索して引っかかることは相当厳しいでしょう。
+とはいえ、適当にタイプした母音のないような単語は好ましくありません。発音しにくい &amp;amp; 覚えにくいというのはマイナスです。単語をそのまま使わず、少しもじったり組み合わせたりするとよいでしょう。フレーズを作って、単語の頭文字をつなげ合わせるのもよいです。Linux (Linux Is Not UniX) のような再帰的頭字語を作れるとカッコいいです。
+あるいは、英語以外の単語・フレーズで考えるとユニーク性は増します。Google 翻訳の左欄に日本語なり英語の単語を入れて、右欄の言語を変えまくってよさそうな表記を探したりします。
+ラテン語とかエスペラントとかはそうそう被らないでしょう（README に説明を書くべきだとは思いますが）。日本語のローマ字表記や中国語のピンインも意外と穴場だったりします。
+キーボードでタイプしやすい名前にする :warning: 世の中 Dvorak 配列とか AZERTY 配列とかありますが、自分は大多数を占める QWERTY 配列における打ちやすさを考えています。 :warning:</description></item></channel></rss>
