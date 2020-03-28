@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>devops on blog-ja.dtan4.net</title><link>http://blog-ja.dtan4.net/tags/devops/</link><description>Recent content in devops on blog-ja.dtan4.net</description><generator>Hugo -- gohugo.io</generator><language>ja-JP</language><copyright>Copyright &amp;copy; 2020 dtan4 All Rights Reserved</copyright><lastBuildDate>Sat, 19 Dec 2015 00:00:00 +0000</lastBuildDate><atom:link href="http://blog-ja.dtan4.net/tags/devops/index.xml" rel="self" type="application/rss+xml"/><item><title>Terraform と CI で実現するインフラのコード化と構築の自動化</title><link>http://blog-ja.dtan4.net/posts/qiita-ab1671d657f1571e59d8/</link><pubDate>Sat, 19 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-ab1671d657f1571e59d8/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
-Wantedly Advent Calendar 2015 __18__日目です。
-インフラチームインターンの @dtan4 です。
-Wantedly では Terraform を用いたインフラのコード化 (Infrastructure as Code) を全面的に取り入れています。インフラリソースの追加や修正は、コードを書くこと・CI 上での自動適用によって行われています。
-この記事では、今年5月から半年以上の間 Terraform を運用してきた中での
-なぜ Terraform でインフラをコード化しようとしたのか どのように Terraform を運用しているのか Terraform 運用にあたって注意すべき点 既存リソースから Terraform コードを生成する Terraforming について ということを紹介したいと思います。
-Terraform とは Terraform は、Vagrant などで有名な HashiCorp が作っている__コードからインフラリソースを作成する・コードでインフラを管理する__ためのツールです。AWS, GCP, Azure, DigitalOcean といったクラウドプロバイダや DNSimple, Mailgun, Rundeck を含む多くの SaaS に幅広く対応しています。
-コードは JSON 互換である HCL (HashiCorp Configuration Language) で記述します。例えば AWS ELB と EC2 インスタンスは
-# from https://www.</description></item></channel></rss>
