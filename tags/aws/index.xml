@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>AWS on blog-ja.dtan4.net</title><link>http://blog-ja.dtan4.net/tags/aws/</link><description>Recent content in AWS on blog-ja.dtan4.net</description><generator>Hugo -- gohugo.io</generator><language>ja-JP</language><copyright>Copyright &amp;copy; 2020 dtan4 All Rights Reserved</copyright><lastBuildDate>Mon, 03 Oct 2016 00:00:00 +0000</lastBuildDate><atom:link href="http://blog-ja.dtan4.net/tags/aws/index.xml" rel="self" type="application/rss+xml"/><item><title>EC2 + IAM Role で供給されたクレデンシャルを環境変数として使う</title><link>http://blog-ja.dtan4.net/posts/qiita-4f687a74abcbe1a36190/</link><pubDate>Mon, 03 Oct 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-4f687a74abcbe1a36190/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+2016-12-09 14:15 追記 EC2 上の Docker コンテナ内からでも、AWS_ 環境変数を設定することなくインスタンスプロファイルが使えました。
+AWS SDK は AWS_* 環境変数設定されてなかったら自動で http://169.254.169.254/latest/meta-data/... を叩いてクレデンシャルを取りに行きます。で、ホスト直実行でもコンテナ挟むのでもつなぎに行くネットワークは同じ AWS なので問題なくインスタンスプロファイルを取れるのでした。
+したがって、この記事に書いてあるような手間をかける必要はありません…
+tl;dr AWS_SECURITY_TOKEN AWS_SESSION_TOKEN を忘れるな
+2019-03-11 追記 awscli は AWS_SECURITY_TOKEN で実行できますが、 AWS SDK は AWS_SESSION_TOKEN でないと動作しないものがあるようです。 ログイン画面から発行されるワンタイムパスワードも現在は AWS_SESSION_TOKEN であるため、そちらに統一する方が良さそうです。
+時代は IAM Role EC2 上で AWS リソースにアクセスする場合、専用の IAM ユーザを作ってクレデンシャルを発行してもいいのですが、IAM Role を EC2 に紐付けると便利です。クレデンシャルをアプリケーションコードやスクリプトに埋め込む必要がなくなるからです。
+しかし awscli や AWS SDK を埋め込んだコードを__ホスト上で直に__実行する場合は彼らがよしなにクレデンシャルを取得するのでいいのですが、Docker コンテナ上で実行する場合は少々面倒です。-e AWS_ACCESS_KEY_ID= でクレデンシャルを渡したいのですが値はどこから取ればいいのか。
+※ 今回は ECS 上ではなく1、直接インスタンス上で docker run する場合の話です。
+metadata からクレデンシャルを取り出す EC2 インスタンス内部から http://169.</description></item><item><title>CoreOS で ECS クラスタを構築する</title><link>http://blog-ja.dtan4.net/posts/qiita-a98ceb194ed4854bb300/</link><pubDate>Wed, 15 Jun 2016 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-a98ceb194ed4854bb300/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+ECS クラスタを作るにあたって土台の EC2 インスタンスが必要となるわけですが、そこで使う AMI として公式では ECS-optimized AMI を推奨しています。ECS-optimized AMI は Amazon Linux AMI に新し目の Docker と ecs-agent、ecs-init スクリプトを同梱したやつです。初回チュートリアルでクラスタを立てる時もこの AMI が使われます。
+ただ、実際のところ EC2 の中身に関しては (2016-06-15 時点)
+Linux Kernel 3.10 以上で Docker 1.5.0 以上で ecs-agent コンテナが立ってる のであれば何でもよいのです。ECS-optimized AMI はそれを満たした推奨構成であるだけです。
+というわけで、Docker 環境に特化した CoreOS を使ってみましょう。
+ECS クラスタを準備 まっさらからクラスタ建てる場合は、Management Console なり ecs-cli なりで新しくクラスタを作ってください。 もしくは、既存クラスタにノード追加の形で CoreOS インスタンスを追加することもできます。
+（ないなら）IAM Role ecsInstanceRole を作成 ecs-agent が ECS API にアクセスするため、その権限をインスタンスに付与してあげる必要があります。 初回チュートリアルでクラスタを立ち上げた場合は作られてると思いますが、まっさらからクラスタを構築する場合はこの Role がないので作る必要があります。
+IAM -&amp;gt; Roles -&amp;gt; Create New Role を開く [AWS Service Role] の [Amazon EC2] を開き、AmazonEC2ContainerServiceforEC2Role にチェックを入れる [Create Role] 作った Role を開き、[Trusted Relationships] -&amp;gt; [Show policy document] が以下のようになっているのを確認。なってなかったら上書き。 { &amp;#34;Version&amp;#34;: &amp;#34;2008-10-17&amp;#34;, &amp;#34;Statement&amp;#34;: [ { &amp;#34;Sid&amp;#34;: &amp;#34;&amp;#34;, &amp;#34;Effect&amp;#34;: &amp;#34;Allow&amp;#34;, &amp;#34;Principal&amp;#34;: { &amp;#34;Service&amp;#34;: &amp;#34;ec2.</description></item><item><title>Crystal で AWS API を叩く</title><link>http://blog-ja.dtan4.net/posts/qiita-0a93c42a44f9e6cb8b48/</link><pubDate>Wed, 16 Dec 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-0a93c42a44f9e6cb8b48/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+この記事は Crystal Advent Calendar 2015 の16日目の記事です :exclamation:
+昨日の記事は @pine613 さんの 『 東京 Crystal 勉強会 #3 in 恵比寿 』 を開催します!!!! でした。1/22 に第三回を開催とのことでぜひ参加したいのですが、3日後の 1/25 が修論提出日だったりします。善処できるよう努力します。
+さて、今回は Crystal で AWS の API を叩いてみた、というお話です。
+Crystal から AWS を触りたい 普段 AWS なインフラやってる人間なので、Crystal で AWS を操作できないものかと考えました。やっぱネイティブバイナリ吐けるっていうのはツール作る人間にとって魅力的なんですよ…
+Ruby, Python, JavaScript, Java, Go, &amp;hellip; といったいわゆるメジャーな言語から AWS を操作する場合は、AWS が公式に提供している SDK を使うのが一般的です。提供言語の一覧は以下のページに有ります。
+AWS のツール | アマゾン ウェブ サービス（AWS 日本語）
+ですが、ご覧のとおり Erlang/Elixir や Crystal といったマイナーな言語についてはまだ SDK は提供されていません。Erlang/Elixir は一部サービスに対応した非公式 SDK gleber/erlcloud があります。が、俺たちの Crystal には非公式 SDK すらありません。</description></item></channel></rss>

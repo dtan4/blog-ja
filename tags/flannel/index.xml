@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>flannel on blog-ja.dtan4.net</title><link>http://blog-ja.dtan4.net/tags/flannel/</link><description>Recent content in flannel on blog-ja.dtan4.net</description><generator>Hugo -- gohugo.io</generator><language>ja-JP</language><copyright>Copyright &amp;copy; 2020 dtan4 All Rights Reserved</copyright><lastBuildDate>Thu, 02 Apr 2015 00:00:00 +0000</lastBuildDate><atom:link href="http://blog-ja.dtan4.net/tags/flannel/index.xml" rel="self" type="application/rss+xml"/><item><title>CoreOS + flannel で複数ホスト間コンテナ通信をする</title><link>http://blog-ja.dtan4.net/posts/qiita-8f9cf40aabd2e6c9a494/</link><pubDate>Thu, 02 Apr 2015 00:00:00 +0000</pubDate><guid>http://blog-ja.dtan4.net/posts/qiita-8f9cf40aabd2e6c9a494/</guid><description>この記事はQiitaの記事をエクスポートしたものです。内容が古くなっている可能性があります。
+CoreOS が提供する flannel を使って、複数の CoreOS マシンを跨いで Docker コンテナ同士通信できるようにする、というお話です。
+flannel もともと Kubernates には似たようなホスト間通信機能がついていたのですが、Google Compute Engine (GCE) 上でしか使えないという欠点がありました。これを取り出し、汎用的に使えるようにしたのが flannel です。
+また、似た機能を持つものに weave がありますが、weave は導入が少々面倒な上に相手ホストの IP を明示的に指定してあげないといけません。その点 flannel は CoreOS 上での導入が簡単で、相手の IP を知らなくてもよく透過的に利用できるという利点があります。ホストに割り振られる IP が不定である EC2 + VPC 構成でも使いやすいでしょう。
+イメージ図はこんな感じです。
+(from https://github.com/coreos/flannel/blob/master/packet-01.png)
+試してみる 以下で紹介する CoreOS VM を含めたサンプルリポジトリです。あわせてご利用ください: dtan4/coreos-flannel-sample
+cloud-config まず cloud-config はこんな感じです。flanneld.service というのを定義しています。
+#cloud-config coreos: etcd: discovery: https://discovery.etcd.io/&amp;lt;token&amp;gt; addr: $public_ipv4:4001 peer-addr: $public_ipv4:7001 fleet: public-ip: $public_ipv4 flannel: interface: $public_ipv4 units: - name: etcd.service command: start - name: fleet.</description></item></channel></rss>
